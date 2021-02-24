@@ -1,0 +1,100 @@
+Before Get Started
+OS Requirements
+
+Master and Worker nodes must be running with any one of the below Operating Systems:
+
+Ubuntu 16.04+
+Debian 9+
+CentOS 7
+Red Hat Enterprise Linux (RHEL) 7
+Fedora 25+
+Amazon Linux 2
+Hardware Requirements
+
+RAM: 2 GB or More
+CPU: 2 CPU or More
+OS Configuration
+
+Disable Swap
+# swapoff -a 
+
+Disable SELinux
+[iwayQ@ ~]$setenforce 0 (setenforce: SELinux is disabled)
+[iwayQ@ ~]$
+# sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+Disable Firewal
+# service iptables stop
+
+If IP TABLES are enabled then configure IP tables to see bridged traffic
+
+# modprobe br_netfilter
+# cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+# sudo sysctl --system
+
+Unique hostname, MAC address, and product_uuid 
+[iwayQ@ ~]$ifconfig | grep ether
+        ether 06:b5:b0:04:34:45  txqueuelen 1000  (Ethernet)
+[iwayQ@ ~]$
+
+[iwayQ@ ~]$cat /sys/class/dmi/id/product_uuid
+EC2D3281-B316-79C1-CB8E-79BC63D66FDC
+[iwayQ@ ~]$
+
+Network connectivity between all cluster nodes including master.
+Network Configuration
+
+Ensure below ports are open on Master and Worker nodes.
+
+Control-Plane Node (Master Node)
+
+
+
+Worker Node
+
+
+
+Install Packages
+
+Required below packages installed in all nodes( master and worker nodes).
+
+docker: Container Runtime 
+kubeadm:  Command to bootstrap the cluster.
+kubelet: Service running on all nodes to managing starting pods and containers.
+kubectl: Command utility to  interact with K8s cluster API server.
+Configure Kubernetes Repo:
+
+1.  Run below command to add Kubernetes Repo to the yum repo.
+
+# cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kubelet kubeadm kubectl
+EOF
+
+2. Run below command to  install  Packages
+
+# yum install docker kubeadm kubectl kubelet --disableexcludes=kubernetes
+
+Enable Services to start after reboot
+
+[iwayQ@ ~]$chkconfig docker on
+Note: Forwarding request to 'systemctl enable docker.service'.
+Created symlink from /etc/systemd/system/multi-user.target.wants/docker.service to /usr/lib/systemd/system/docker.service.
+
+[iwayQ@ ~]$chkconfig kubelet on
+Note: Forwarding request to 'systemctl enable kubelet.service'.
+Created symlink from /etc/systemd/system/multi-user.target.wants/kubelet.service to /usr/lib/systemd/system/kubelet.service.
+[iwayQ@ ~]$
+
+Start Docker RunTime
+
+[iwayQ@ ~]$ service docker start
